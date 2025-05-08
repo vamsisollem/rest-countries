@@ -5,26 +5,35 @@ phases:
     runtime-versions:
       java: corretto11
     commands:
-      - echo Installing Sonar Scanner...
+      - echo "Installing Sonar Scanner..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
       - unzip sonar-scanner.zip
       - export PATH=$PATH:$PWD/sonar-scanner-4.7.0.2747-linux/bin
 
-      - echo Installing OWASP ZAP...
+      - echo "Installing OWASP ZAP..."
       - wget https://github.com/zaproxy/zaproxy/releases/download/v2.14.0/ZAP_2_14_0_unix.sh
       - chmod +x ZAP_2_14_0_unix.sh
       - ./ZAP_2_14_0_unix.sh -q -dir $HOME/zap
 
+  pre_build:
+    commands:
+      - echo "Setting image name..."
+      - IMAGE_NAME=my-image-name
+      - echo "Image name is $IMAGE_NAME"
+
   build:
     commands:
-      - echo Running SAST with SonarQube...
+      - echo "Running SAST with SonarQube..."
       - sonar-scanner \
           -Dsonar.projectKey=my_project_key \
           -Dsonar.sources=. \
-          -Dsonar.host.url=http://<sonarqube-server>:9000 \
-          -Dsonar.login=<your_sonar_token>
+          -Dsonar.host.url=http://<your-sonarqube-host>:9000 \
+          -Dsonar.login=<your-sonar-token>
 
-      - echo Running DAST with OWASP ZAP...
+      - echo "Building Docker image..."
+      - docker build -t $IMAGE_NAME .
+
+      - echo "Running DAST with OWASP ZAP..."
       - $HOME/zap/zap.sh -cmd -quickurl http://<your-app-url> -quickout zap-report.html -quickprogress
 
 artifacts:
